@@ -1,6 +1,7 @@
 package com.example.schatzkarte690;
 
 import java.io.File;
+import java.util.ArrayList;
 
 import org.osmdroid.DefaultResourceProxyImpl;
 import org.osmdroid.ResourceProxy;
@@ -48,13 +49,16 @@ public class MainActivity extends Activity implements LocationListener,
 
 	private final static int ACTIVITY_CHOOSE_FILE = 1;
 	private final static int ACTIVITY_ACTIVATE_GPS = 2;
+	
+	private final static int MILLISECONDSREQUEST=6000;
+	private final static int METERSREQUEST=1;
 
 	private LocationManager locationManager;
 	private MapView map;
 	private SharedPreferences settings;
 	private Button addMarkButton;
 	private MyItemizedOverlay itemizedOverlay;
-	private GeoPoint lastKnownGeoPoint;
+	private GeoPoint lastKnownGeoPoint=null;
 	private EditText editTextOverLayItem;
 
 	@Override
@@ -102,8 +106,8 @@ public class MainActivity extends Activity implements LocationListener,
 		super.onResume();
 		locationManager = (LocationManager) this
 				.getSystemService(Context.LOCATION_SERVICE);
-		locationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER, 0, // 1min
-				0, // 10m
+		locationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER, MILLISECONDSREQUEST, // 1min
+				METERSREQUEST,
 				this);
 	}
 
@@ -163,19 +167,16 @@ public class MainActivity extends Activity implements LocationListener,
 		((TextView) findViewById(R.id.textView_longtitude)).setText(Double
 				.toString(location.getLongitude()));
 		lastKnownGeoPoint = current;
-		controller.setZoom(18);
-		controller.animateTo(current);
 		controller.setCenter(current);
 
 	}
 
 	private void initMap(File offlineMap) {
-		GeoPoint hsrGeo = new GeoPoint(47.22324788, 8.817290017);
 		if (offlineMap.exists()
 				&& offlineMap.getAbsolutePath().endsWith(".mbtiles")) {
 			locationManager.requestLocationUpdates(
-					LocationManager.GPS_PROVIDER, 0, // 1min
-					0, // 10m
+					LocationManager.GPS_PROVIDER, MILLISECONDSREQUEST,
+					METERSREQUEST,
 					this);
 
 			map = (MapView) findViewById(R.id.mapview);
@@ -184,7 +185,9 @@ public class MainActivity extends Activity implements LocationListener,
 			map.setBuiltInZoomControls(true);
 			IMapController controller = map.getController();
 			controller.setZoom(18);
-			controller.animateTo(hsrGeo);
+			if(lastKnownGeoPoint==null)
+				lastKnownGeoPoint=new GeoPoint(47.22324788, 8.817290017);
+			controller.animateTo(lastKnownGeoPoint);
 			XYTileSource mapTileSource = new XYTileSource("mbtiles",
 					ResourceProxy.string.offline_mode, 1, 20, 256, ".png",
 					"http://example.org/");
@@ -211,8 +214,8 @@ public class MainActivity extends Activity implements LocationListener,
 			editor.remove("TileFilePath");
 			editor.commit();
 			locationManager.requestLocationUpdates(
-					LocationManager.GPS_PROVIDER, 0, // 1min
-					0, // 10m
+					LocationManager.GPS_PROVIDER, MILLISECONDSREQUEST, // 1min
+					METERSREQUEST,
 					this);
 
 			map = (MapView) findViewById(R.id.mapview);
@@ -221,10 +224,10 @@ public class MainActivity extends Activity implements LocationListener,
 			map.setBuiltInZoomControls(true);
 			IMapController controller = map.getController();
 			controller.setZoom(18);
-			controller.animateTo(hsrGeo);
-
+			if(lastKnownGeoPoint==null)
+				lastKnownGeoPoint=new GeoPoint(47.22324788, 8.817290017);
+			controller.animateTo(lastKnownGeoPoint);
 		}
-		lastKnownGeoPoint = hsrGeo;
 		Drawable marker = getResources().getDrawable(
 				android.R.drawable.star_big_on);
 		int markerWidth = marker.getIntrinsicWidth();
@@ -253,8 +256,10 @@ public class MainActivity extends Activity implements LocationListener,
 
 	@Override
 	protected void onSaveInstanceState(Bundle outState) {
-		// TODO Auto-generated method stub
-		outState.putParcelable("Marks", itemizedOverlay);
+		if(lastKnownGeoPoint!=null)
+			outState.putString("lastKnownLocation",lastKnownGeoPoint.toString() );
+		if(itemizedOverlay!=null)
+			outState.putParcelable("Marks", itemizedOverlay);
 		super.onSaveInstanceState(outState);
 	}
 
@@ -262,34 +267,11 @@ public class MainActivity extends Activity implements LocationListener,
 	protected void onRestoreInstanceState(Bundle savedInstanceState) {
 		// TODO Auto-generated method stub
 		itemizedOverlay = savedInstanceState.getParcelable("Marks");
+		lastKnownGeoPoint=getGeoPointForString(savedInstanceState.getString("lastKnownLocation"));
+		IMapController controller=map.getController();
+		controller.animateTo(lastKnownGeoPoint);
 		map.getOverlays().add(itemizedOverlay);
 		super.onRestoreInstanceState(savedInstanceState);
-	}
-
-	private AlertDialog createMessageDialog(String message) {
-		AlertDialog.Builder builder = new AlertDialog.Builder(this);
-		builder.setMessage(message);
-		builder.setPositiveButton("OK", new DialogInterface.OnClickListener() {
-			@Override
-			public void onClick(DialogInterface dialog, int id) {
-				dialog.dismiss();
-				finish();
-
-			}
-		});
-		return builder.create();
-	}
-
-	private void longToast(String message) {
-		Toast.makeText(this, message, Toast.LENGTH_LONG).show();
-	}
-
-	public String stackTraceToString(StackTraceElement[] stacktrace) {
-		String res = new String();
-		for (int i = 0; i < stacktrace.length; i++) {
-			res = res + stacktrace[i].toString();
-		}
-		return res;
 	}
 
 	private void log(MyItemizedOverlay itemizedOverlayToLog) {
@@ -308,7 +290,57 @@ public class MainActivity extends Activity implements LocationListener,
 
 		startActivity(intent);
 	}
+	
+	@Override
+	public void removed(int index) {
+		try {
+			ArrayList<OverlayItem> overlayItems = ((MyItemizedOverlay) map.getOverlays()
+					.get(1)).getOverlayItemList();
+			
+			MyItemizedOverlay newOverlay = new MyItemizedOverlay(itemizedOverlay.getMarker(),
+					itemizedOverlay.getResourceProxy(), this);
+			
+			map.getOverlays().remove(itemizedOverlay);
+			map.invalidate();
+			if(overlayItems.size()>index)
+				overlayItems.remove(index);
+			for (int i = 0; i < overlayItems.size(); i++) {
+				OverlayItem acualItem = overlayItems.get(i);
+				newOverlay.addItem(acualItem.getPoint(), acualItem.getTitle(),
+						acualItem.getSnippet());
+			}
+			itemizedOverlay = newOverlay;
+			map.getOverlays().add(itemizedOverlay);
+			map.invalidate();
+		} catch (Exception e) {
+			AlertDialog dialog=createMessageDialog(stackTraceToString(e.getStackTrace()));
+			dialog.show();
+		}
+	}
 
+	private AlertDialog createMessageDialog(String message) {
+		AlertDialog.Builder builder = new AlertDialog.Builder(this);
+		builder.setMessage(message);
+		builder.setPositiveButton("OK", new DialogInterface.OnClickListener() {
+			@Override
+			public void onClick(DialogInterface dialog, int id) {
+				dialog.dismiss();
+				finish();
+
+			}
+		});
+		return builder.create();
+	}
+	private void longToast(String message) {
+		Toast.makeText(this, message, Toast.LENGTH_LONG).show();
+	}
+	public String stackTraceToString(StackTraceElement[] stacktrace) {
+		String res = new String();
+		for (int i = 0; i < stacktrace.length; i++) {
+			res = res + stacktrace[i].toString();
+		}
+		return res;
+	}
 	private String markersToString(MyItemizedOverlay io) {
 		String res = new String();
 		for (int i = 0; i < io.size(); i++) {
@@ -322,30 +354,10 @@ public class MainActivity extends Activity implements LocationListener,
 		}
 		return res;
 	}
-
-	@Override
-	public void removed(int index) {
-		try {
-			MyItemizedOverlay oldOverlay = (MyItemizedOverlay) map.getOverlays()
-					.get(1);
-			MyItemizedOverlay newOverlay = new MyItemizedOverlay(oldOverlay.getMarker(),
-					oldOverlay.getResourceProxy(), this);
-			oldOverlay.remove(index);
-			for (int i = 0; i < oldOverlay.size(); i++) {
-				OverlayItem acualItem = oldOverlay.createItem(i);
-				newOverlay.addItem(acualItem.getPoint(), acualItem.getTitle(),
-						acualItem.getSnippet());
-			}
-			itemizedOverlay = newOverlay;
-			map.getOverlays().remove(oldOverlay);
-			map.getOverlays().add(itemizedOverlay);
-			map.invalidate();
-		} catch (Exception e) {
-			AlertDialog dialog=createMessageDialog(stackTraceToString(e.getStackTrace()));
-			dialog.show();
-		}
+	private GeoPoint getGeoPointForString(String geoString){
+		String[] valuesStrings=geoString.split("[,]");
+		return new GeoPoint(Integer.parseInt(valuesStrings[0]), Integer.parseInt(valuesStrings[1]));
 	}
-
 	@Override
 	public void onProviderDisabled(String provider) {
 	}

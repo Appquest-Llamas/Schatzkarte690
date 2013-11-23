@@ -36,14 +36,14 @@ public class MyItemizedOverlay extends ItemizedOverlay<OverlayItem> implements
 		return true;
 	}
 
+	public ArrayList<OverlayItem> getOverlayItemList(){
+		return overlayItemList;
+	}
+	
 	public void addItem(GeoPoint p, String title, String snippet) {
 		OverlayItem newItem = new OverlayItem(title, snippet, p);
 		overlayItemList.add(newItem);
 		populate();
-	}
-	
-	public void remove(int index){
-		overlayItemList.remove(index);
 	}
 
 	@Override
