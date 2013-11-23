@@ -1,14 +1,11 @@
 package com.example.schatzkarte690;
 
 import java.util.ArrayList;
-
 import org.osmdroid.ResourceProxy;
 import org.osmdroid.api.IMapView;
 import org.osmdroid.util.GeoPoint;
 import org.osmdroid.views.overlay.ItemizedOverlay;
 import org.osmdroid.views.overlay.OverlayItem;
-
-import android.R.integer;
 import android.graphics.Point;
 import android.graphics.drawable.Drawable;
 import android.os.Parcel;
@@ -19,19 +16,24 @@ public class MyItemizedOverlay extends ItemizedOverlay<OverlayItem> implements
 
 	private ArrayList<OverlayItem> overlayItemList = new ArrayList<OverlayItem>();
 	private RemoveItemCallback callback;
-
-	@Override
-	protected boolean onTap(int index) {
-		super.onTap(index);
-		callback.removed(index);
-		return true;
-	}
+	private Drawable marker;
+	private ResourceProxy resourceProxy;
+	private RemoveItemCallback removeItemCallback;
 
 	public MyItemizedOverlay(Drawable pDefaultMarker,
 			ResourceProxy pResourceProxy,RemoveItemCallback callback) {
 		super(pDefaultMarker, pResourceProxy);
 		this.callback=callback;
+		this.setMarker(pDefaultMarker);
+		this.setResourceProxy(pResourceProxy);
+		this.setRemoveItemCallback(callback);
 		// TODO Auto-generated constructor stub
+	}
+	@Override
+	protected boolean onTap(int index) {
+		super.onTap(index);
+		callback.removed(index);
+		return true;
 	}
 
 	public void addItem(GeoPoint p, String title, String snippet) {
@@ -46,32 +48,44 @@ public class MyItemizedOverlay extends ItemizedOverlay<OverlayItem> implements
 
 	@Override
 	protected OverlayItem createItem(int arg0) {
-		// TODO Auto-generated method stub
 		return overlayItemList.get(arg0);
 	}
 
 	@Override
 	public int size() {
-		// TODO Auto-generated method stub
 		return overlayItemList.size();
 	}
 
 	@Override
 	public boolean onSnapToItem(int arg0, int arg1, Point arg2, IMapView arg3) {
-		// TODO Auto-generated method stub
 		return false;
 	}
 
 	@Override
 	public int describeContents() {
-		// TODO Auto-generated method stub
 		return 0;
 	}
 
 	@Override
 	public void writeToParcel(Parcel dest, int flags) {
-		// TODO Auto-generated method stub
-
+	}
+	public Drawable getMarker() {
+		return marker;
+	}
+	public void setMarker(Drawable marker) {
+		this.marker = marker;
+	}
+	public ResourceProxy getResourceProxy() {
+		return resourceProxy;
+	}
+	public void setResourceProxy(ResourceProxy resourceProxy) {
+		this.resourceProxy = resourceProxy;
+	}
+	public RemoveItemCallback getRemoveItemCallback() {
+		return removeItemCallback;
+	}
+	public void setRemoveItemCallback(RemoveItemCallback removeItemCallback) {
+		this.removeItemCallback = removeItemCallback;
 	}
 
 }

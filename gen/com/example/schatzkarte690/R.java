@@ -45,6 +45,7 @@ public final class R {
         public static final int Latitude=0x7f050005;
         public static final int LogText=0x7f050004;
         public static final int Longtitude=0x7f050006;
+        public static final int Zero=0x7f050007;
         public static final int action_settings=0x7f050001;
         public static final int app_name=0x7f050000;
         public static final int hello_world=0x7f050002;

@@ -1,8 +1,6 @@
 package com.example.schatzkarte690;
 
 import java.io.File;
-import java.util.ArrayList;
-import java.util.List;
 
 import org.osmdroid.DefaultResourceProxyImpl;
 import org.osmdroid.ResourceProxy;
@@ -18,18 +16,14 @@ import org.osmdroid.tileprovider.tilesource.XYTileSource;
 import org.osmdroid.tileprovider.util.SimpleRegisterReceiver;
 import org.osmdroid.util.GeoPoint;
 import org.osmdroid.views.MapView;
-import org.osmdroid.views.overlay.ItemizedOverlay;
-import org.osmdroid.views.overlay.Overlay;
 import org.osmdroid.views.overlay.OverlayItem;
 import org.osmdroid.views.overlay.TilesOverlay;
 
 import android.location.Location;
 import android.location.LocationListener;
 import android.location.LocationManager;
-import android.location.LocationProvider;
 import android.net.Uri;
 import android.os.Bundle;
-import android.R.integer;
 import android.app.Activity;
 import android.app.AlertDialog;
 import android.content.Context;
@@ -41,7 +35,6 @@ import android.graphics.Color;
 import android.graphics.drawable.Drawable;
 import android.view.Menu;
 import android.view.MenuItem;
-import android.view.TextureView;
 import android.view.MenuItem.OnMenuItemClickListener;
 import android.view.View;
 import android.view.View.OnClickListener;
@@ -50,7 +43,8 @@ import android.widget.EditText;
 import android.widget.TextView;
 import android.widget.Toast;
 
-public class MainActivity extends Activity implements LocationListener,RemoveItemCallback {
+public class MainActivity extends Activity implements LocationListener,
+		RemoveItemCallback {
 
 	private final static int ACTIVITY_CHOOSE_FILE = 1;
 	private final static int ACTIVITY_ACTIVATE_GPS = 2;
@@ -115,13 +109,11 @@ public class MainActivity extends Activity implements LocationListener,RemoveIte
 
 	@Override
 	public boolean onCreateOptionsMenu(Menu menu) {
-		// Inflate the menu; this adds items to the action bar if it is present.
-		MenuItem item= menu.add(R.string.LogText);
+		MenuItem item = menu.add(R.string.LogText);
 		item.setOnMenuItemClickListener(new OnMenuItemClickListener() {
-			
+
 			@Override
 			public boolean onMenuItemClick(MenuItem arg0) {
-				// TODO Auto-generated method stub
 				log(itemizedOverlay);
 				return false;
 			}
@@ -147,6 +139,9 @@ public class MainActivity extends Activity implements LocationListener,RemoveIte
 					dialog.show();
 				}
 			}
+			else if (resultCode==RESULT_CANCELED) {
+				longToast("Select Offline Data!!");
+			}
 			break;
 		}
 		case ACTIVITY_ACTIVATE_GPS: {
@@ -163,8 +158,10 @@ public class MainActivity extends Activity implements LocationListener,RemoveIte
 	public void onLocationChanged(Location location) {
 		IMapController controller = map.getController();
 		GeoPoint current = new GeoPoint(location);
-		((TextView)findViewById(R.id.textView_latitude)).setText(Double.toString(location.getLatitude()));
-		((TextView)findViewById(R.id.textView_longtitude)).setText(Double.toString(location.getLongitude()));
+		((TextView) findViewById(R.id.textView_latitude)).setText(Double
+				.toString(location.getLatitude()));
+		((TextView) findViewById(R.id.textView_longtitude)).setText(Double
+				.toString(location.getLongitude()));
 		lastKnownGeoPoint = current;
 		controller.setZoom(18);
 		controller.animateTo(current);
@@ -172,30 +169,10 @@ public class MainActivity extends Activity implements LocationListener,RemoveIte
 
 	}
 
-	@Override
-	public void onProviderDisabled(String provider) {
-		// TODO Auto-generated method stub
-
-	}
-
-	@Override
-	public void onProviderEnabled(String provider) {
-		// TODO Auto-generated method stub
-
-	}
-
-	@Override
-	public void onStatusChanged(String provider, int status, Bundle extras) {
-		// TODO Auto-generated method stub
-
-	}
-
 	private void initMap(File offlineMap) {
 		GeoPoint hsrGeo = new GeoPoint(47.22324788, 8.817290017);
 		if (offlineMap.exists()
 				&& offlineMap.getAbsolutePath().endsWith(".mbtiles")) {
-			LocationProvider provider = locationManager
-					.getProvider(LocationManager.GPS_PROVIDER);
 			locationManager.requestLocationUpdates(
 					LocationManager.GPS_PROVIDER, 0, // 1min
 					0, // 10m
@@ -225,17 +202,14 @@ public class MainActivity extends Activity implements LocationListener,RemoveIte
 					treasureMapProvider, getBaseContext());
 			treasureMapTilesOverlay
 					.setLoadingBackgroundColor(Color.TRANSPARENT);
-
-			// Jetzt können wir den Overlay zu unserer Karte hinzufügen:
+			
 			map.getOverlays().add(treasureMapTilesOverlay);
 		} else {
+			longToast("Offline Data moved -> restart App");
 			settings = getSharedPreferences("strings", 0);
 			SharedPreferences.Editor editor = settings.edit();
-			editor.putString("TileFilePath", "");
+			editor.remove("TileFilePath");
 			editor.commit();
-
-			LocationProvider provider = locationManager
-					.getProvider(LocationManager.GPS_PROVIDER);
 			locationManager.requestLocationUpdates(
 					LocationManager.GPS_PROVIDER, 0, // 1min
 					0, // 10m
@@ -260,7 +234,7 @@ public class MainActivity extends Activity implements LocationListener,RemoveIte
 		ResourceProxy resourceProxy = new DefaultResourceProxyImpl(
 				getApplicationContext());
 
-		itemizedOverlay = new MyItemizedOverlay(marker, resourceProxy,this);
+		itemizedOverlay = new MyItemizedOverlay(marker, resourceProxy, this);
 		map.getOverlays().add(itemizedOverlay);
 		addMarkButton = (Button) findViewById(R.id.button_addMark);
 		addMarkButton.setOnClickListener(new OnClickListener() {
@@ -318,7 +292,7 @@ public class MainActivity extends Activity implements LocationListener,RemoveIte
 		return res;
 	}
 
-	private void log( MyItemizedOverlay itemizedOverlayToLog) {
+	private void log(MyItemizedOverlay itemizedOverlayToLog) {
 		Intent intent = new Intent("ch.appquest.intent.LOG");
 
 		if (getPackageManager().queryIntentActivities(intent,
@@ -329,42 +303,56 @@ public class MainActivity extends Activity implements LocationListener,RemoveIte
 		}
 
 		intent.putExtra("ch.appquest.taskname", "Schatzkarte");
-		intent.putExtra("ch.appquest.logmessage", markersToString(itemizedOverlayToLog));
+		intent.putExtra("ch.appquest.logmessage",
+				markersToString(itemizedOverlayToLog));
 
 		startActivity(intent);
 	}
+
 	private String markersToString(MyItemizedOverlay io) {
-		String res=new String();
-		for (int i=0;i<io.size();i++) {
-			GeoPoint actual=io.createItem(i).getPoint();
-			if(i==0)
-				res+="("+actual.getLatitudeE6()+"/"+actual.getLongitudeE6()+")";
+		String res = new String();
+		for (int i = 0; i < io.size(); i++) {
+			GeoPoint actual = io.createItem(i).getPoint();
+			if (i == 0)
+				res += "(" + actual.getLatitudeE6() + "/"
+						+ actual.getLongitudeE6() + ")";
 			else
-				res+=",("+actual.getLatitudeE6()+"/"+actual.getLongitudeE6()+")";
+				res += ",(" + actual.getLatitudeE6() + "/"
+						+ actual.getLongitudeE6() + ")";
 		}
 		return res;
 	}
 
 	@Override
 	public void removed(int index) {
-		Drawable marker = getResources().getDrawable(
-				android.R.drawable.star_big_on);
-		int markerWidth = marker.getIntrinsicWidth();
-		int markerHeight = marker.getIntrinsicHeight();
-		marker.setBounds(0, markerHeight, markerWidth, 0);
-
-		ResourceProxy resourceProxy = new DefaultResourceProxyImpl(
-				getApplicationContext());
-		MyItemizedOverlay newOverlay=new MyItemizedOverlay(marker, resourceProxy, this);
-		MyItemizedOverlay oldOverlay=(MyItemizedOverlay)map.getOverlays().get(1);
-		oldOverlay.remove(index);
-		for(int i=0;i<oldOverlay.size();i++){
-			OverlayItem acualItem=oldOverlay.createItem(i);
-			newOverlay.addItem(acualItem.getPoint(), acualItem.getTitle(), acualItem.getSnippet());
+		try {
+			MyItemizedOverlay oldOverlay = (MyItemizedOverlay) map.getOverlays()
+					.get(1);
+			MyItemizedOverlay newOverlay = new MyItemizedOverlay(oldOverlay.getMarker(),
+					oldOverlay.getResourceProxy(), this);
+			oldOverlay.remove(index);
+			for (int i = 0; i < oldOverlay.size(); i++) {
+				OverlayItem acualItem = oldOverlay.createItem(i);
+				newOverlay.addItem(acualItem.getPoint(), acualItem.getTitle(),
+						acualItem.getSnippet());
+			}
+			itemizedOverlay = newOverlay;
+			map.getOverlays().remove(oldOverlay);
+			map.getOverlays().add(itemizedOverlay);
+			map.invalidate();
+		} catch (Exception e) {
+			AlertDialog dialog=createMessageDialog(stackTraceToString(e.getStackTrace()));
+			dialog.show();
 		}
-		itemizedOverlay=newOverlay;
-		map.getOverlays().remove(oldOverlay);
-		map.getOverlays().add(itemizedOverlay);
-		map.invalidate();
+	}
+
+	@Override
+	public void onProviderDisabled(String provider) {
+	}
+	@Override
+	public void onProviderEnabled(String provider) {
+	}
+	@Override
+	public void onStatusChanged(String provider, int status, Bundle extras) {
 	}
 }
