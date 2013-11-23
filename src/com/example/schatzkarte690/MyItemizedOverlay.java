@@ -2,39 +2,35 @@ package com.example.schatzkarte690;
 
 import java.util.ArrayList;
 
-
 import org.osmdroid.ResourceProxy;
 import org.osmdroid.api.IMapView;
 import org.osmdroid.util.GeoPoint;
 import org.osmdroid.views.overlay.ItemizedOverlay;
 import org.osmdroid.views.overlay.OverlayItem;
 
+import android.R.integer;
 import android.graphics.Point;
 import android.graphics.drawable.Drawable;
 import android.os.Parcel;
 import android.os.Parcelable;
 
-public class MyItemizedOverlay extends ItemizedOverlay<OverlayItem> implements Parcelable{
+public class MyItemizedOverlay extends ItemizedOverlay<OverlayItem> implements
+		Parcelable {
 
 	private ArrayList<OverlayItem> overlayItemList = new ArrayList<OverlayItem>();
-	private boolean isRemoved=false;
+	private RemoveItemCallback callback;
+
 	@Override
 	protected boolean onTap(int index) {
-		boolean tappedAnOverlay = super.onTap(index);
-		if(tappedAnOverlay){
-			overlayItemList.remove(index);
-			setRemoved(true);
-		}
-		else {
-			
-		}
+		super.onTap(index);
+		callback.removed(index);
 		return true;
 	}
-	
-	
+
 	public MyItemizedOverlay(Drawable pDefaultMarker,
-			ResourceProxy pResourceProxy) {
+			ResourceProxy pResourceProxy,RemoveItemCallback callback) {
 		super(pDefaultMarker, pResourceProxy);
+		this.callback=callback;
 		// TODO Auto-generated constructor stub
 	}
 
@@ -42,6 +38,10 @@ public class MyItemizedOverlay extends ItemizedOverlay<OverlayItem> implements P
 		OverlayItem newItem = new OverlayItem(title, snippet, p);
 		overlayItemList.add(newItem);
 		populate();
+	}
+	
+	public void remove(int index){
+		overlayItemList.remove(index);
 	}
 
 	@Override
@@ -56,7 +56,6 @@ public class MyItemizedOverlay extends ItemizedOverlay<OverlayItem> implements P
 		return overlayItemList.size();
 	}
 
-	
 	@Override
 	public boolean onSnapToItem(int arg0, int arg1, Point arg2, IMapView arg3) {
 		// TODO Auto-generated method stub
@@ -72,17 +71,7 @@ public class MyItemizedOverlay extends ItemizedOverlay<OverlayItem> implements P
 	@Override
 	public void writeToParcel(Parcel dest, int flags) {
 		// TODO Auto-generated method stub
-		
-	}
 
-
-	public boolean isRemoved() {
-		return isRemoved;
-	}
-
-
-	public void setRemoved(boolean isRemoved) {
-		this.isRemoved = isRemoved;
 	}
 
 }

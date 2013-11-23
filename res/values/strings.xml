@@ -6,5 +6,7 @@
     <string name="hello_world">Hello world!</string>
     <string name="AddMark">Add mark</string>
     <string name="LogText">loggen</string>
+    <string name="Latitude">Latitude:</string>
+    <string name="Longtitude">Longtitude:</string>
 
 </resources>

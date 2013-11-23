@@ -34,4 +34,36 @@
         <requestFocus />
     </EditText>
 
+    <TextView
+        android:id="@+id/textView_labelLongtitude"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignParentBottom="true"
+        android:layout_alignParentLeft="true"
+        android:text="@string/Longtitude" />
+
+    <TextView
+        android:id="@+id/textView_labelLatitude"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_above="@+id/textView_labelLongtitude"
+        android:layout_alignParentLeft="true"
+        android:text="@string/Latitude" />
+
+    <TextView
+        android:id="@+id/textView_longtitude"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignParentBottom="true"
+        android:layout_toRightOf="@+id/textView_labelLongtitude"
+        android:text="0" />
+
+    <TextView
+        android:id="@+id/textView_latitude"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_above="@+id/textView_longtitude"
+        android:layout_alignLeft="@+id/textView_longtitude"
+        android:text="0" />
+
 </RelativeLayout>

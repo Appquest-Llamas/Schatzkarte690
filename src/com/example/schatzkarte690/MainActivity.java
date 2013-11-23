@@ -1,6 +1,8 @@
 package com.example.schatzkarte690;
 
 import java.io.File;
+import java.util.ArrayList;
+import java.util.List;
 
 import org.osmdroid.DefaultResourceProxyImpl;
 import org.osmdroid.ResourceProxy;
@@ -16,6 +18,9 @@ import org.osmdroid.tileprovider.tilesource.XYTileSource;
 import org.osmdroid.tileprovider.util.SimpleRegisterReceiver;
 import org.osmdroid.util.GeoPoint;
 import org.osmdroid.views.MapView;
+import org.osmdroid.views.overlay.ItemizedOverlay;
+import org.osmdroid.views.overlay.Overlay;
+import org.osmdroid.views.overlay.OverlayItem;
 import org.osmdroid.views.overlay.TilesOverlay;
 
 import android.location.Location;
@@ -24,6 +29,7 @@ import android.location.LocationManager;
 import android.location.LocationProvider;
 import android.net.Uri;
 import android.os.Bundle;
+import android.R.integer;
 import android.app.Activity;
 import android.app.AlertDialog;
 import android.content.Context;
@@ -35,14 +41,16 @@ import android.graphics.Color;
 import android.graphics.drawable.Drawable;
 import android.view.Menu;
 import android.view.MenuItem;
+import android.view.TextureView;
 import android.view.MenuItem.OnMenuItemClickListener;
 import android.view.View;
 import android.view.View.OnClickListener;
 import android.widget.Button;
 import android.widget.EditText;
+import android.widget.TextView;
 import android.widget.Toast;
 
-public class MainActivity extends Activity implements LocationListener {
+public class MainActivity extends Activity implements LocationListener,RemoveItemCallback {
 
 	private final static int ACTIVITY_CHOOSE_FILE = 1;
 	private final static int ACTIVITY_ACTIVATE_GPS = 2;
@@ -155,6 +163,8 @@ public class MainActivity extends Activity implements LocationListener {
 	public void onLocationChanged(Location location) {
 		IMapController controller = map.getController();
 		GeoPoint current = new GeoPoint(location);
+		((TextView)findViewById(R.id.textView_latitude)).setText(Double.toString(location.getLatitude()));
+		((TextView)findViewById(R.id.textView_longtitude)).setText(Double.toString(location.getLongitude()));
 		lastKnownGeoPoint = current;
 		controller.setZoom(18);
 		controller.animateTo(current);
@@ -250,7 +260,7 @@ public class MainActivity extends Activity implements LocationListener {
 		ResourceProxy resourceProxy = new DefaultResourceProxyImpl(
 				getApplicationContext());
 
-		itemizedOverlay = new MyItemizedOverlay(marker, resourceProxy);
+		itemizedOverlay = new MyItemizedOverlay(marker, resourceProxy,this);
 		map.getOverlays().add(itemizedOverlay);
 		addMarkButton = (Button) findViewById(R.id.button_addMark);
 		addMarkButton.setOnClickListener(new OnClickListener() {
@@ -261,6 +271,7 @@ public class MainActivity extends Activity implements LocationListener {
 						+ "\nalt:" + lastKnownGeoPoint.getAltitude();
 				itemizedOverlay.addItem(lastKnownGeoPoint, text,
 						editTextOverLayItem.getText().toString());
+				map.invalidate();
 			}
 
 		});
@@ -332,5 +343,28 @@ public class MainActivity extends Activity implements LocationListener {
 				res+=",("+actual.getLatitudeE6()+"/"+actual.getLongitudeE6()+")";
 		}
 		return res;
+	}
+
+	@Override
+	public void removed(int index) {
+		Drawable marker = getResources().getDrawable(
+				android.R.drawable.star_big_on);
+		int markerWidth = marker.getIntrinsicWidth();
+		int markerHeight = marker.getIntrinsicHeight();
+		marker.setBounds(0, markerHeight, markerWidth, 0);
+
+		ResourceProxy resourceProxy = new DefaultResourceProxyImpl(
+				getApplicationContext());
+		MyItemizedOverlay newOverlay=new MyItemizedOverlay(marker, resourceProxy, this);
+		MyItemizedOverlay oldOverlay=(MyItemizedOverlay)map.getOverlays().get(1);
+		oldOverlay.remove(index);
+		for(int i=0;i<oldOverlay.size();i++){
+			OverlayItem acualItem=oldOverlay.createItem(i);
+			newOverlay.addItem(acualItem.getPoint(), acualItem.getTitle(), acualItem.getSnippet());
+		}
+		itemizedOverlay=newOverlay;
+		map.getOverlays().remove(oldOverlay);
+		map.getOverlays().add(itemizedOverlay);
+		map.invalidate();
 	}
 }
